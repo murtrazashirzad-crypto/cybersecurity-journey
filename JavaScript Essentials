@@ -1,0 +1,136 @@
+# JavaScript Essentials
+
+**Path:** Cyber Security 101 → Web Hacking
+**Room URL:** https://tryhackme.com/room/javascriptessentials
+**Difficulty:** Easy
+**Completed:** 27 May 2026
+
+---
+
+## Overview
+
+This room covers the basics of JavaScript (JS) — how it's used to add interactivity to websites and how attackers can abuse it. Topics include dialogue functions, control flow statements, minification/obfuscation, and best practices for writing secure JS code.
+
+---
+
+## Key Concepts
+
+### Why JS matters for security
+
+JS runs on the **client side** (in the user's browser), which means:
+- Users can read, modify, and bypass any JS logic
+- Anything sensitive (passwords, API keys, validation rules) must NEVER live in client-side JS
+- Attackers can inject JS via XSS to manipulate pages, steal data, or annoy users
+
+### Dialogue Functions
+
+| Function | Purpose | Returns |
+|----------|---------|---------|
+| `alert("msg")` | Shows a message with OK button | Nothing |
+| `prompt("question")` | Asks for typed input | The string the user typed (or `null` if cancelled) |
+| `confirm("msg")` | Yes/No question | `true` (OK) or `false` (Cancel) |
+
+These can be abused by attackers — e.g. an HTML file with `for (let i = 0; i < 500; i++) alert("Hacked")` would spam the victim with 500 popups.
+
+### Integrating JS in HTML
+
+Three ways:
+1. **Inline** — directly inside HTML tags (e.g. `onclick="..."`)
+2. **Internal** — inside a `<script>` block in the HTML file
+3. **External** — separate `.js` file linked via `<script src="file.js"></script>`
+
+### Control Flow & Why It's Insecure on the Client
+
+Example from the room:
+```javascript
+if (username === "admin" && password === "ComplexPassword") {
+    document.write("You are successfully authenticated!");
+}
+```
+
+This is **broken authentication**. Anyone can:
+- View page source and read the credentials
+- Use DevTools to skip the check entirely
+- Modify the JS at runtime
+
+Authentication must happen on the **server**, never in client-side JS.
+
+### Minification and Obfuscation
+
+- **Minification** — removes whitespace, comments, and shortens variable names to reduce file size
+- **Obfuscation** — deliberately makes code unreadable using techniques like:
+  - Hex encoding (`0x247e` instead of `9342`)
+  - Variable name scrambling (`_0x114713`)
+  - String arrays accessed by index
+  - Dummy code
+
+**Important:** Obfuscation slows attackers down but doesn't stop them. The browser still executes the code, so the logic is always recoverable. Online deobfuscators can reverse it.
+
+#### Deobfuscation trick
+
+When you see ugly hex math like:
+```javascript
+age = 0x1*0x247e+0x35*-0x2e+-0x1ae3;
+```
+
+Just paste it into the Chrome console (F12). The browser evaluates hex math natively → returns `21`.
+
+### Best Practices
+
+1. **Never rely on client-side validation alone** — always validate on the server
+2. **Don't include untrusted JS libraries** — supply chain attacks are real
+3. **Never hardcode secrets** (API keys, passwords) in JS
+4. **Minify and obfuscate production code** — slows down reverse engineering
+
+---
+
+## Answers
+
+| Question | Answer |
+|----------|--------|
+| Times `Hacked` alert shows in invoice.html | `3` |
+| JS function to ask user for input | `prompt` |
+| Value stored in `carName` if user enters Tesla | `Tesla` |
+| Password for admin user | `ComplexPassword` |
+| Alert shown after running hello.html | `Welcome to THM` |
+| Value of `age = 0x1*0x247e+0x35*-0x2e+-0x1ae3` | `21` |
+| Good practice to blindly include JS from any source? | `nay` |
+
+---
+
+## Key Takeaways
+
+- **Client-side code is never trustworthy** — the user owns the browser. Anything in JS can be read, modified, or bypassed.
+- **Authentication, secrets, and sensitive logic belong on the server.** If you find these in JS during a pentest, it's a finding.
+- **Obfuscation ≠ security.** It's a speed bump, not a wall. Use it on top of proper security, never as a replacement.
+- **DevTools is your best friend** — the Sources tab reveals all client-side JS, the Console runs arbitrary code in the page context.
+- **`prompt`, `alert`, `confirm`** are harmless on their own but become attack tools when combined with XSS.
+
+---
+
+## Pentester's Cheatsheet
+
+Things to check when looking at client-side JS during recon:
+
+```bash
+# In the browser:
+F12 → Sources tab          # See all loaded JS files
+F12 → Console               # Run arbitrary JS in page context
+F12 → Network → JS filter   # See what JS files load and when
+
+# Useful console expressions:
+document.cookie             # Read cookies (if not HttpOnly)
+localStorage                # Read localStorage
+sessionStorage              # Read sessionStorage
+0x1*0x247e+0x35*-0x2e+-0x1ae3   # Evaluate obfuscated hex math
+```
+
+Search loaded JS for:
+- `password`, `apikey`, `api_key`, `token`, `secret`, `admin`
+- Hardcoded URLs or hidden endpoints
+- Client-side validation logic (often bypassable)
+- Comments developers forgot to remove
+
+---
+
+**Status:** ✅ Completed
