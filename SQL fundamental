@@ -1,0 +1,282 @@
+# TryHackMe — SQL Fundamentals
+
+| Field | Details |
+|---|---|
+| **Path** | Cyber Security 101 |
+| **Difficulty** | Easy |
+| **Status** | Completed ✅ |
+| **Completed** | 30 May 2025 |
+| **Time Taken** | ~5 hours |
+| **Tasks Completed** | 9 / 9 |
+| **Points Earned** | 160 |
+| **Streak** | 5 days |
+| **Room URL** | https://tryhackme.com/room/sqlfundamentals |
+
+---
+
+## Overview
+
+This room covers the fundamentals of SQL and relational databases, including how to create and manage databases and tables, perform CRUD operations, filter data with clauses and operators, and use built-in functions for data manipulation.
+
+---
+
+## Task 2 — Databases 101
+
+**Key concepts:**
+
+- A **database** is an organised collection of structured data that can be accessed, manipulated, and analysed.
+- **Relational databases (SQL)** store data in tables with rows and columns. Relationships can be made between tables using keys.
+- **Non-relational databases (NoSQL)** store data in flexible, non-tabular formats such as JSON documents.
+- A **primary key** uniquely identifies each row in a table — no duplicates, no nulls.
+- A **foreign key** links one table to another by referencing the primary key of a second table.
+
+---
+
+## Task 3 — SQL
+
+**Key concepts:**
+
+- **SQL (Structured Query Language)** is used to query, define, and manipulate data in relational databases.
+- A **DBMS (Database Management System)** sits between the user and the database — examples include MySQL, MariaDB, MongoDB, and Oracle Database.
+- SQL reads like plain English, making it relatively easy to learn compared to other languages.
+
+**Connecting to MySQL:**
+
+```bash
+mysql -u root -p
+# Password: tryhackme
+```
+
+---
+
+## Task 4 — Database and Table Statements
+
+### Database commands
+
+```sql
+-- Create a new database
+CREATE DATABASE thm_bookmarket_db;
+
+-- List all databases
+SHOW DATABASES;
+
+-- Switch to a database
+USE thm_bookmarket_db;
+
+-- Delete a database (irreversible)
+DROP DATABASE database_name;
+```
+
+### Table commands
+
+```sql
+-- Create a table with defined columns and data types
+CREATE TABLE book_inventory (
+    book_id INT AUTO_INCREMENT PRIMARY KEY,
+    book_name VARCHAR(255) NOT NULL,
+    publication_date DATE
+);
+
+-- List all tables in the active database
+SHOW TABLES;
+
+-- View the structure of a table
+DESCRIBE book_inventory;
+
+-- Add a new column to an existing table
+ALTER TABLE book_inventory ADD page_count INT;
+
+-- Delete a table (irreversible)
+DROP TABLE table_name;
+```
+
+### Questions
+
+**Q1: Using SHOW DATABASES, what is the flag database name?**  
+Run `SHOW DATABASES;` — one of the database names is the flag in `THM{...}` format.
+
+**Q2: Set task_4_db as active and list its tables — what is the flag?**
+
+```sql
+USE task_4_db;
+SHOW TABLES;
+```
+The table name returned is the flag.
+
+---
+
+## Task 5 — CRUD Operations
+
+**CRUD = Create, Read, Update, Delete**
+
+```sql
+-- INSERT: add a new record
+INSERT INTO books (id, name, published_date, description)
+VALUES (1, "Android Security Internals", "2014-10-14", "An In-Depth Guide to Android's Security Architecture");
+
+-- SELECT: read records
+SELECT * FROM books;
+
+-- UPDATE: modify an existing record (always use WHERE)
+UPDATE books
+SET description = "An In-Depth Guide to Android's Security Architecture"
+WHERE id = 1;
+
+-- DELETE: remove a record (always use WHERE)
+DELETE FROM books
+WHERE id = 6;
+```
+
+> ⚠️ Always use `WHERE` with `UPDATE` and `DELETE` — omitting it affects every row in the table.
+
+---
+
+## Task 6 — Clauses
+
+```sql
+-- DISTINCT: return unique values only
+SELECT DISTINCT name FROM books;
+
+-- GROUP BY: group rows sharing a value
+SELECT name, COUNT(*) FROM books GROUP BY name;
+
+-- ORDER BY: sort results (ASC = oldest/smallest first, DESC = newest/largest first)
+SELECT * FROM books ORDER BY published_date ASC;
+SELECT * FROM books ORDER BY published_date DESC;
+
+-- HAVING: filter after GROUP BY (WHERE filters before grouping)
+SELECT name, COUNT(*) FROM books GROUP BY name HAVING name LIKE '%hack%';
+
+-- LIMIT: restrict number of rows returned
+SELECT name FROM hacking_tools ORDER BY name ASC LIMIT 1;
+```
+
+---
+
+## Task 7 — Operators
+
+```sql
+-- LIKE: pattern matching (% = wildcard)
+SELECT * FROM books WHERE description LIKE "%guide%";
+
+-- AND: both conditions must be true
+SELECT * FROM books WHERE category = "Offensive Security" AND name = "Bug Bounty Bootcamp";
+
+-- OR: either condition can be true
+SELECT * FROM books WHERE name LIKE "%Android%" OR name LIKE "%ios%";
+
+-- NOT: exclude matching rows
+SELECT * FROM books WHERE NOT description LIKE "%guide%";
+
+-- BETWEEN: filter within a range (inclusive)
+SELECT * FROM books WHERE id BETWEEN 2 AND 4;
+
+-- = and !=: exact match and not equal
+SELECT * FROM books WHERE name = "Designing Secure Software";
+SELECT * FROM books WHERE category != "Offensive Security";
+
+-- Comparison operators with AND
+SELECT name FROM hacking_tools WHERE category = 'Network intelligence' AND amount < 100;
+
+-- DISTINCT with condition
+SELECT DISTINCT category FROM hacking_tools WHERE amount >= 300;
+```
+
+---
+
+## Task 8 — Functions
+
+### String functions
+
+```sql
+-- CONCAT(): combine columns into one string
+SELECT CONCAT(name, " is a type of ", category, " book.") AS book_info FROM books;
+
+-- GROUP_CONCAT(): concatenate multiple rows into one field
+SELECT category, GROUP_CONCAT(name SEPARATOR ", ") AS books
+FROM books
+GROUP BY category;
+
+-- SUBSTRING(): extract part of a string
+SELECT SUBSTRING(published_date, 1, 4) AS published_year FROM books;
+
+-- LENGTH(): count characters in a string
+SELECT LENGTH(name) AS name_length FROM books;
+```
+
+### Aggregate functions
+
+```sql
+-- COUNT(): count rows
+SELECT COUNT(*) AS total_books FROM books;
+
+-- SUM(): sum all values in a column
+SELECT SUM(amount) AS total_tools FROM hacking_tools;
+
+-- MAX(): highest value in a column
+SELECT MAX(published_date) AS latest_book FROM books;
+
+-- MIN(): lowest value in a column
+SELECT MIN(published_date) AS earliest_book FROM books;
+```
+
+### Questions
+
+**Q1: What is the tool with the longest name based on character length?**
+
+```sql
+SELECT name FROM hacking_tools ORDER BY LENGTH(name) DESC LIMIT 1;
+```
+**Answer:** `USB Rubber Ducky`
+
+**Q2: What is the total sum of all tools?**
+
+```sql
+SELECT SUM(amount) AS total_tools FROM hacking_tools;
+```
+**Answer:** `1444`
+
+**Q3: What are the tool names where the amount does not end in 0, concatenated by " & "?**
+
+```sql
+SELECT GROUP_CONCAT(name SEPARATOR ' & ') AS tools
+FROM hacking_tools
+WHERE amount % 10 != 0;
+```
+**Answer:** `Flipper Zero & iCopy-XS`
+
+---
+
+## Key Lessons Learned
+
+- Always `USE` a database before creating tables or running queries.
+- SQL keywords like `CREATE`, `TABLE`, `VALUES`, `INSERT INTO` must be spelled exactly — one typo causes an error.
+- A semicolon `;` ends a statement. A missing `;` puts MySQL into `->` waiting mode — type `\c` to cancel.
+- `WHERE` is critical with `UPDATE` and `DELETE` — without it, every row is affected.
+- `HAVING` filters after grouping; `WHERE` filters before grouping.
+- `%` is the wildcard in `LIKE` — `%guide%` matches anything containing the word "guide".
+
+---
+
+## Commands Reference
+
+| Command | Purpose |
+|---|---|
+| `CREATE DATABASE x` | Create a new database |
+| `SHOW DATABASES` | List all databases |
+| `USE x` | Switch active database |
+| `DROP DATABASE x` | Delete a database |
+| `CREATE TABLE x (...)` | Create a table |
+| `SHOW TABLES` | List tables in active DB |
+| `DESCRIBE x` | Show table structure |
+| `ALTER TABLE x ADD col type` | Add a column |
+| `DROP TABLE x` | Delete a table |
+| `INSERT INTO x (...) VALUES (...)` | Add a record |
+| `SELECT * FROM x` | Read all records |
+| `UPDATE x SET col=val WHERE ...` | Modify a record |
+| `DELETE FROM x WHERE ...` | Remove a record |
+| `SELECT DISTINCT col FROM x` | Unique values only |
+| `GROUP BY col` | Group rows |
+| `ORDER BY col ASC/DESC` | Sort results |
+| `HAVING condition` | Filter after grouping |
+| `LIMIT n` | Cap number of results |
