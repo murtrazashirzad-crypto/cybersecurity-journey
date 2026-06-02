@@ -1,0 +1,92 @@
+Here's the full writeup ready to copy and paste:
+
+---
+
+# Burp Suite: The Basics — TryHackMe Writeup
+
+**Date:** June 2026
+**Platform:** TryHackMe
+**Path:** Cyber Security 101 > Web Hacking
+**Difficulty:** Easy
+
+---
+
+## Overview
+
+Burp Suite is a powerful tool used for testing the security of web applications. It allows security testers to intercept, analyze, and modify HTTP/HTTPS traffic between the browser and a target application.
+
+---
+
+## Main Components
+
+### 1. Proxy
+- Intercepts requests between browser and server
+- Lets you view and modify traffic in real time
+- Core feature for web testing
+
+### 2. Repeater
+- Manually resend and modify requests
+- Useful for testing vulnerabilities like SQL injection, XSS, and authentication bypass
+- Helps in controlled experimentation
+
+### 3. Intruder
+- Automates sending multiple requests
+- Used for brute force attacks and fuzzing inputs
+- Supports payload customization
+
+### 4. Decoder
+- Encodes and decodes data formats
+- Supports Base64, URL encoding, Hex, etc.
+- Helps analyze encoded payloads
+
+### 5. Comparer
+- Compares two responses or requests
+- Shows differences at word or byte level
+- Useful for identifying subtle changes in responses
+
+### 6. Sequencer
+- Analyzes randomness of tokens (session cookies, IDs)
+- Detects weak or predictable token generation
+- Important for session security testing
+
+---
+
+## Settings in Burp Suite
+
+### User Settings (Global)
+- Applies to entire Burp installation
+- Includes general configuration like updates and UI settings
+
+### Project Settings
+- Specific to current session/project
+- Reset when using Community Edition after closing
+
+---
+
+## Typical Workflow
+
+1. Configure browser proxy to Burp Suite
+2. Intercept login or target requests
+3. Send requests to Repeater or Intruder
+4. Analyze responses for vulnerabilities
+5. Use Decoder and Comparer for deeper inspection
+
+---
+
+## Challenge: Site Map Flag
+
+### Steps
+1. Started Burp Suite — Temporary project, Burp defaults
+2. Configured FoxyProxy in Firefox with `127.0.0.1:8080`
+3. Browsed `http://10.144.129.3/` through the proxy
+4. Visited all linked pages: `/about/`, `/contact/`, `/ticket/`, `/products/`
+5. Checked Burp Target → Site Map for unusual endpoints
+6. Found the flag in the site map response
+
+**Flag:** `THM{NmNlZTliNGE1MWU1ZTQzMzgzNmFiNWVk}`
+
+---
+
+## Conclusion
+
+Burp Suite is an essential tool for web application security testing. It provides both manual and automated features that help identify vulnerabilities efficiently. Setting up FoxyProxy correctly and understanding the Site Map are key skills for any web penetration tester.
