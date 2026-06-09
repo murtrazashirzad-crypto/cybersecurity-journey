@@ -1,0 +1,180 @@
+# Gobuster: The Basics
+
+## Room Information
+- **Platform:** TryHackMe
+- **Room:** Gobuster: The Basics
+- **Difficulty:** Easy
+- **Date Completed:** 09/06/2026
+- **Category:** Offensive Security Tooling / Reconnaissance
+
+---
+
+## Summary
+Gobuster is an open-source offensive tool written in Golang used for brute
+forcing web directories, DNS subdomains, and virtual hosts. This room covers
+the three main modes: `dir`, `dns`, and `vhost`.
+
+---
+
+## What I Learned
+- How to use Gobuster `dir` mode to find hidden directories and files
+- How to use Gobuster `dns` mode to enumerate subdomains
+- How to use Gobuster `vhost` mode to find virtual hosts
+- How to add domains to `/etc/hosts` for local DNS resolution
+- How to use `-x` flag to search for specific file extensions
+- How to use `-r` flag to point to a custom DNS resolver
+- How to filter false positives using `--exclude-length`
+- How to use `curl` to read file contents from terminal
+
+---
+
+## Tools Used
+- Gobuster v3.6
+- curl
+- nano (editing /etc/hosts)
+
+---
+
+## Walkthrough
+
+### Task 4 — Directory and File Enumeration (dir mode)
+
+**Step 1 — Add domain to /etc/hosts:**
+```bash
+echo "10.146.188.10 www.offensivetools.thm" >> /etc/hosts
+```
+
+**Step 2 — Enumerate directories:**
+```bash
+gobuster dir -u "http://www.offensivetools.thm/" \
+-w /usr/share/wordlists/dirb/common.txt -t 64
+```
+
+**Result:**
+
+
+
+**Step 4 — Read the flag:**
+```bash
+curl http://www.offensivetools.thm/secret/flag.js
+```
+
+**Flag:** `THM{ReconWasASuccess}`
+
+---
+
+### Task 5 — Subdomain Enumeration (dns mode)
+
+**Command:**
+```bash
+gobuster dns -d offensivetools.thm \
+-w /usr/share/wordlists/SecLists/Discovery/DNS/subdomains-top1million-5000.txt \
+-r 10.146.188.10
+```
+
+**Result:**
+
+
+**Step 4 — Read the flag:**
+```bash
+curl http://www.offensivetools.thm/secret/flag.js
+```
+
+**Flag:** `THM{ReconWasASuccess}`
+
+---
+
+### Task 5 — Subdomain Enumeration (dns mode)
+
+**Command:**
+```bash
+gobuster dns -d offensivetools.thm \
+-w /usr/share/wordlists/SecLists/Discovery/DNS/subdomains-top1million-5000.txt \
+-r 10.146.188.10
+```
+
+**Result:**
+
+
+**Answer: 4 subdomains**
+
+---
+
+### Task 6 — Virtual Host Enumeration (vhost mode)
+
+**Command:**
+```bash
+gobuster vhost -u "http://10.146.188.10" \
+--domain offensivetools.thm \
+-w /usr/share/wordlists/SecLists/Discovery/DNS/subdomains-top1million-5000.txt \
+--append-domain \
+--exclude-length 250-320
+```
+
+**Result:**
+
+**Answer: 4 vhosts with status 200**
+
+---
+
+## Flags Found
+
+| Flag | Location |
+|------|----------|
+| `THM{ReconWasASuccess}` | /secret/flag.js |
+
+---
+
+## Commands Cheatsheet
+
+```bash
+# Dir mode — find directories and files
+gobuster dir -u "http://TARGET/" -w WORDLIST -t 64 -x php,js,txt
+
+# DNS mode — find subdomains
+gobuster dns -d TARGET.thm -w WORDLIST -r DNS_SERVER
+
+# Vhost mode — find virtual hosts
+gobuster vhost -u "http://TARGET_IP" --domain TARGET.thm \
+-w WORDLIST --append-domain --exclude-length 250-320
+
+# Skip TLS verification
+gobuster dir -u "https://TARGET/" -w WORDLIST --no-tls-validation
+
+# Save output to file
+gobuster dir -u "http://TARGET/" -w WORDLIST -o results.txt
+```
+
+---
+
+## Key Flags Reference
+
+| Flag | Description |
+|------|-------------|
+| `-u` | Target URL |
+| `-w` | Wordlist path |
+| `-t` | Threads (default 10) |
+| `-x` | File extensions |
+| `-o` | Output to file |
+| `-r` | Custom DNS resolver |
+| `-d` | Target domain (dns mode) |
+| `--append-domain` | Append domain to wordlist entries |
+| `--exclude-length` | Filter false positives by response size |
+| `--no-tls-validation` | Skip SSL certificate check |
+| `--delay` | Wait time between requests |
+
+---
+
+## Mistakes I Made & Fixed
+- Typo: `/usr/share/worldlists/` → correct: `/usr/share/wordlists/`
+- Forgot `http://` in URL → got "unsupported scheme" error
+- Used `small.txt` wordlist — too small, switched to `common.txt`
+- Forgot to add `.thm` domain to `/etc/hosts` → got "no such host" error
+- DNS mode needed `-r` flag to point to target's DNS server
+
+---
+
+## References
+- [TryHackMe Gobuster Room](https://tryhackme.com/room/gobusterthebasics)
+- [Gobuster GitHub](https://github.com/OJ/gobuster)
+
