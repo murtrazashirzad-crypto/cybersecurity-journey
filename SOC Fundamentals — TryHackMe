@@ -1,0 +1,153 @@
+# SOC Fundamentals — TryHackMe
+
+> Learn about the SOC team, their processes, and how they detect and respond to threats.
+
+**Room:** https://tryhackme.com/room/socfundamentals  
+**Difficulty:** Easy  
+**Category:** Defensive Security  
+**Completed:** 12 June 2026
+
+---
+
+## Summary
+
+This room covers the fundamentals of a Security Operations Center (SOC) — the dedicated team responsible for monitoring, detecting, and responding to security threats 24/7. The practical exercise involved acting as a Level 1 SOC Analyst, investigating a port scanning alert in a SIEM solution using the 5 Ws framework.
+
+## Tools Used
+
+- SIEM (Security Information and Event Management) — log analysis and alert investigation
+
+---
+
+## Key Concepts
+
+### What is a SOC?
+
+A Security Operations Center is a dedicated facility operated by a specialised security team that continuously monitors an organisation's network and resources to identify and respond to suspicious activity 24/7.
+
+---
+
+### The 3 Pillars of SOC
+
+```
+People + Process + Technology = Mature SOC
+```
+
+| Pillar | What it means |
+|--------|--------------|
+| **People** | Skilled security analysts (L1, L2, L3) |
+| **Process** | Clear procedures — alert triage, escalation, reporting |
+| **Technology** | SIEM, EDR, Firewall, IDS/IPS |
+
+---
+
+### SOC People — Roles
+
+| Role | Responsibilities |
+|------|-----------------|
+| **L1 SOC Analyst** | Alert triage, first responder, escalation |
+| **L2 SOC Analyst** | Deep investigation, incident response |
+| **L3 SOC Analyst** | Threat hunting, advanced forensics |
+| **SOC Manager** | Team management, reporting to leadership |
+
+---
+
+### SOC Detection Capabilities
+
+| Capability | Example |
+|------------|---------|
+| Detect vulnerabilities | Unpatched Windows systems |
+| Detect unauthorized activity | Stolen credentials used to login |
+| Detect policy violations | Sending confidential files insecurely |
+| Detect intrusions | Attacker exploiting web application |
+
+---
+
+### SOC Technology
+
+| Tool | Purpose | Detection/Response |
+|------|---------|-------------------|
+| **SIEM** | Collects logs, correlates events, alerts | Detection ONLY |
+| **EDR** | Real-time endpoint monitoring | Both |
+| **Firewall** | Filters network traffic | Both |
+| **IDS/IPS** | Detects/prevents intrusions | Both |
+| **Antivirus** | Detects malware | Both |
+
+> **Key fact:** SIEM = Detection ONLY. Humans or other tools handle the response.
+
+---
+
+### The 5 Ws of Alert Triage
+
+| W | Question | Example |
+|---|----------|---------|
+| **What?** | What happened? | Port scanning / malware detected |
+| **When?** | When did it happen? | June 12, 2024 17:24 |
+| **Where?** | Where did it happen? | Destination IP 10.0.0.3 |
+| **Who?** | Who is responsible? | Source host NESSUS |
+| **Why?** | Why did it happen? | Intended / Malicious |
+
+---
+
+## Task 6 — Practical Exercise
+
+**Scenario:** Level 1 SOC Analyst investigating a port scanning alert.
+
+**Alert:** Port Scanning Activity Detected from IP: 10.0.0.8
+
+**Note from vulnerability team:** They were running an authorised port scan from host 10.0.0.8
+
+### SIEM Log Analysis
+
+| Field | Value |
+|-------|-------|
+| Source IP | 10.0.0.8 |
+| Source Hostname | NESSUS |
+| Destination IP | 10.0.0.3 |
+| Destination Hostname | JOE PC |
+| Time | June 12, 2024 17:24 |
+| Ports scanned | 443, 53, 22, 21, 25, 143, 80 |
+
+### 5 Ws Answers
+
+| W | Answer |
+|---|--------|
+| **What?** | Port Scan |
+| **When?** | June 12, 2024 17:24 |
+| **Where?** | 10.0.0.3 |
+| **Who?** | NESSUS |
+| **Why?** | Intended |
+| **Response sent back?** | Yea (JOE PC responded on port 22) |
+
+### How I Identified "Intended"
+
+- Source IP `10.0.0.8` matched the vulnerability team's notified IP
+- Source hostname was **NESSUS** — a well-known vulnerability scanner tool
+- The scan was authorised by the vulnerability assessment team
+- Therefore: **Intended**, not malicious ✅
+
+---
+
+## Lessons Learned
+
+- Always check context before classifying an alert as malicious — authorised scans trigger the same alerts as real attacks
+- NESSUS is a legitimate vulnerability scanner — seeing it in logs doesn't always mean attack
+- The 5 Ws framework gives a structured way to investigate any alert
+- SIEM only detects — humans make the judgement call
+- L1 analysts escalate to L2 when activity is confirmed malicious
+- Geographic location anomalies are a key indicator of unauthorized activity
+
+## Attacker's Perspective (Why This Matters for Pentesting)
+
+Understanding SOC helps pentesters:
+- Know what logs your attacks generate
+- Understand what triggers SIEM alerts
+- Evade detection by mimicking normal traffic
+- Write better reports that speak to blue team concerns
+
+---
+
+## References
+
+- https://tryhackme.com/room/socfundamentals
+- https://www.ibm.com/topics/security-operations-center
