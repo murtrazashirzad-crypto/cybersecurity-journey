@@ -82,6 +82,10 @@ I follow the standard pentest kill chain for each room:
 1. **Exploitation** — gaining initial foothold
 1. **Privilege Escalation** — root / SYSTEM
 1. **Post-Exploitation** — looting, persistence concepts, lessons
+2. | 3 | Gobuster | Easy | Directory Enumeration | ✅ Complete | [View](./easy/gobuster/README.md) |
+| 4 | Shells Overview | Easy | Reverse Shells / Web Shells | ✅ Complete | [View](./easy/shells-overview/README.md) |
+| 5 | SQLMap | Easy | SQL Injection | ✅ Complete | [View](./easy/sqlmap/README.md) |
+| 6 | SOC Fundamentals | Easy | Defensive Security / SOC | ✅ Complete | [View](./easy/soc-fundamentals/README.md) |
 
 -----
 
