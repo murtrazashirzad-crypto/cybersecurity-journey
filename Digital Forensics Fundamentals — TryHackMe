@@ -1,0 +1,200 @@
+# Digital Forensics Fundamentals — TryHackMe
+
+> Learn about digital forensics and related processes and experiment with a practical example.
+
+**Room:** https://tryhackme.com/room/digitalforensicsfundamentals  
+**Difficulty:** Easy  
+**Category:** Defensive Security  
+**Completed:** 13 June 2026
+
+---
+
+## Summary
+
+This room covers the fundamentals of digital forensics — the branch of forensics that investigates cyber crimes. The practical exercise involved analyzing a ransom letter PDF and an image file using forensic tools (pdfinfo and exiftool) to extract metadata and identify the author, location, and camera model used by the kidnapper.
+
+## Tools Used
+
+- `pdfinfo` — extract PDF metadata
+- `exiftool` — extract image EXIF data including GPS coordinates
+- Google Maps — convert GPS coordinates to street name
+
+---
+
+## Key Concepts
+
+### What is Digital Forensics?
+
+The application of methods and procedures to investigate cyber crimes by analyzing digital devices and extracting evidence for legal proceedings.
+
+---
+
+### The 4 Phases of Digital Forensics (NIST)
+
+| Phase | What happens |
+|-------|-------------|
+| **Collection** | Gather devices without tampering with evidence |
+| **Examination** | Filter data — extract relevant files |
+| **Analysis** | Correlate evidence — draw conclusions |
+| **Reporting** | Write detailed report for law enforcement |
+
+---
+
+### Types of Digital Forensics
+
+| Type | What it investigates |
+|------|---------------------|
+| **Computer** | Laptops, desktops |
+| **Mobile** | Phones — calls, GPS, messages |
+| **Network** | Traffic logs, network activity |
+| **Database** | Data theft or modification |
+| **Cloud** | Cloud storage evidence |
+| **Email** | Phishing, fraud campaigns |
+
+---
+
+### Evidence Acquisition Best Practices
+
+| Practice | Why important |
+|----------|--------------|
+| **Proper Authorization** | Evidence invalid in court without it |
+| **Chain of Custody** | Tracks who handled evidence and when |
+| **Write Blocker** | Prevents tampering with original data |
+
+### Chain of Custody Contains:
+- Description of evidence (name, type)
+- Name of individuals who collected it
+- Date and time of collection
+- Storage location
+- Who accessed it and when
+
+---
+
+## Task 5 — Practical Exercise
+
+**Scenario:** A cat named Gado has been kidnapped. A ransom letter was sent as a PDF with an attached image. Using digital forensics tools, we must identify the author, location, and camera used.
+
+### Step 1 — Navigate to files
+```bash
+cd /root/Rooms/introdigitalforensics
+ls
+```
+
+### Step 2 — Extract PDF Metadata
+
+```bash
+pdfinfo ransom-letter.pdf
+```
+
+**Output (relevant):**
+```
+Title:     Pay NOW
+Subject:   We Have Gato
+Author:    Ann Gree Shepherd
+Creator:   Microsoft® Word 2016
+CreationDate: Wed Feb 23 09:10:36 2022 UTC
+```
+
+**Q1 Answer: Ann Gree Shepherd** ✅
+
+---
+
+### Step 3 — Extract Image EXIF Data
+
+```bash
+exiftool letter-image.jpg
+```
+
+**Key findings:**
+```
+Camera Model Name  : Canon EOS R6
+GPS Position       : 51 deg 30' 51.90" N, 0 deg 5' 38.73" W
+User Comment       : THM{238956}
+```
+
+**Q3 Answer: Canon EOS R6** ✅
+
+---
+
+### Step 4 — Find Street from GPS Coordinates
+
+Searched Google Maps for:
+```
+51°30'51.9"N 0°05'38.73"W
+```
+
+Location identified as **Milk Street, London, UK**
+
+**Q2 Answer: Milk Street** ✅
+
+---
+
+## Hidden Flag Found in EXIF Data!
+
+```
+User Comment : THM{238956}
+```
+
+The kidnapper accidentally left a flag hidden in the image metadata! This shows how much information can be hidden in image files. ✅
+
+---
+
+## Key Commands to Remember
+
+```bash
+# Extract PDF metadata
+pdfinfo file.pdf
+
+# Extract image EXIF data
+exiftool image.jpg
+
+# Install tools if needed
+sudo apt install poppler-utils          # for pdfinfo
+sudo apt install libimage-exiftool-perl # for exiftool
+```
+
+---
+
+## What EXIF Data Can Reveal
+
+| EXIF Field | What it reveals |
+|------------|----------------|
+| Camera Model | Device used to take photo |
+| GPS Position | Exact location photo was taken |
+| Date/Time | When photo was taken |
+| Software | Editing software used |
+| Serial Number | Unique camera identifier |
+
+---
+
+## Lessons Learned
+
+- PDF files retain metadata from the original document — author, creation date, software used
+- Images contain EXIF data including GPS coordinates that reveal exact location
+- Always strip metadata before sharing sensitive documents or images
+- Forensic tools like pdfinfo and exiftool can reveal hidden information instantly
+- GPS coordinates in images can pinpoint exact crime scene locations
+- Hidden data (steganography) can exist in User Comment fields
+
+## Defender's Perspective / Privacy Tips
+
+- Use metadata stripping tools before sharing documents publicly
+- Disable GPS tagging on smartphone cameras for privacy
+- Use PDF sanitizers to remove author information before publishing
+- Be aware that MS Word embeds author name automatically
+- ExifTool can be used to remove metadata: `exiftool -all= image.jpg`
+
+## Attacker's Perspective
+
+- Always strip metadata from files before sending — it reveals identity
+- GPS coordinates in images can expose your physical location
+- PDF metadata reveals what software and username created the document
+- These mistakes have caught real criminals in real cases
+
+---
+
+## References
+
+- https://tryhackme.com/room/digitalforensicsfundamentals
+- https://exiftool.org
+- https://www.nist.gov/document/sample-chain-custody-formdocx
