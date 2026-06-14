@@ -1,0 +1,171 @@
+# Incident Response Fundamentals — TryHackMe
+
+> Learn how to perform Incident Response in cyber security.
+
+**Room:** https://tryhackme.com/room/incidentresponsefundamentals  
+**Difficulty:** Easy  
+**Category:** Defensive Security  
+**Completed:** 13 June 2026
+
+---
+
+## Summary
+
+This room covers the fundamentals of Incident Response — the structured process of handling cyber security incidents from start to finish. The practical exercise involved responding to a phishing email incident, identifying infected hosts, containing the threat, and eradicating the malware across multiple hosts in a network.
+
+## Tools Used
+
+- SIEM — log collection and correlation
+- EDR — endpoint detection and response
+- Playbooks — step-by-step IR guidelines
+
+---
+
+## Key Concepts
+
+### What is an Incident?
+
+| Term | Meaning |
+|------|---------|
+| **Event** | Any action logged by a process |
+| **Alert** | Triggered when events point to harmful activity |
+| **False Positive** | Alert raised but NOT actually harmful |
+| **True Positive** | Alert raised AND actually harmful = Incident |
+
+### Incident Severity Levels
+```
+Critical → High → Medium → Low
+```
+Always respond to Critical first!
+
+---
+
+### Types of Incidents
+
+| Type | Description |
+|------|-------------|
+| **Malware Infection** | Malicious program damages system/network |
+| **Security Breach** | Unauthorized access to confidential data |
+| **Data Leak** | Confidential data exposed — intentional or accidental |
+| **Insider Attack** | Attack initiated from within the organisation |
+| **Denial of Service** | Flooding system with fake requests → unavailable |
+
+---
+
+### SANS IR Framework — PICERL
+
+| Phase | What happens | Example |
+|-------|-------------|---------|
+| **Preparation** | Build resources, train staff | Phishing awareness training |
+| **Identification** | Detect abnormal behaviour | Large data exfiltration detected |
+| **Containment** | Minimise impact | Isolate infected host from network |
+| **Eradication** | Remove the threat | Deep malware scan and removal |
+| **Recovery** | Restore systems from backup | Reconfigure host, restore data |
+| **Lessons Learned** | Document gaps, improve process | Post-incident review meeting |
+
+### NIST IR Framework
+
+| NIST Phase | SANS Equivalent |
+|------------|----------------|
+| Preparation | Preparation |
+| Detection & Analysis | Identification |
+| Containment, Eradication & Recovery | Containment + Eradication + Recovery |
+| **Post Incident Activity** | **Lessons Learned** |
+
+---
+
+### IR Tools
+
+| Tool | Purpose |
+|------|---------|
+| **SIEM** | Collects logs, correlates events, detects incidents |
+| **AV** | Detects known malware on systems |
+| **EDR** | Advanced threat detection + containment + eradication |
+
+---
+
+### Playbooks vs Runbooks
+
+| | Playbooks | Runbooks |
+|--|-----------|---------|
+| What | High level guidelines | Detailed step by step execution |
+| Example | "Isolate infected system" | Exact commands to isolate it |
+
+### Example Phishing Playbook
+1. Notify all stakeholders of the phishing email incident
+2. Conduct header and body analysis of the email
+3. Analyze any attachments
+4. Determine if anybody opened the attachments
+5. Isolate infected systems from the network
+6. Block the email sender
+
+---
+
+## Task 6 — Practical Exercise
+
+**Scenario:** A phishing email with a malicious attachment was sent to multiple employees. Perform a complete incident response.
+
+### The Phishing Email
+
+```
+From: Jeff Johnson <j.johnson@ppc.com>
+Subject: Pay Slip for June
+Attachment: Payslip.pdf
+
+"We have sent you the payment for the month of April. 
+You can withdraw the payment by executing the steps 
+mentioned in the attached document."
+```
+
+### Investigation Findings
+
+| Question | Answer |
+|----------|--------|
+| Malicious email sender | Jeff Johnson |
+| Threat vector | Email Attachment |
+| Devices that downloaded | (found in lab) |
+| Devices that executed | (found in lab) |
+
+### IR Steps Followed
+
+1. **Identification** — Detected phishing email with malicious PDF attachment
+2. **Containment** — Isolated infected hosts from network
+3. **Eradication** — Removed malicious file from all infected hosts
+4. **Recovery** — Restored systems to normal operation
+5. **Lessons Learned** — Documented findings for future prevention
+
+---
+
+## Lessons Learned
+
+- Phishing emails are the most common threat vector for malware infections
+- A single phishing campaign can target multiple employees simultaneously
+- Always check sender email address carefully — not just display name
+- Playbooks save critical time during incident response
+- Containment must happen BEFORE eradication — stop the spread first
+- PICERL is easy to remember for SANS framework
+- NIST combines Containment + Eradication + Recovery into one phase
+
+## Defender's Perspective
+
+- Deploy email filtering and anti-phishing solutions
+- Conduct regular phishing awareness training for employees
+- Have playbooks ready BEFORE an incident occurs
+- EDR on every endpoint enables faster containment
+- Regular backups ensure fast recovery after incidents
+- Document everything — chain of custody and incident timeline
+
+## Attacker's Perspective (Why This Matters for Pentesting)
+
+- Phishing is the most effective initial access vector
+- PDF attachments are commonly trusted by users
+- Understanding IR helps pentesters know how quickly defenders respond
+- Faster IR = shorter attacker dwell time = less damage possible
+
+---
+
+## References
+
+- https://tryhackme.com/room/incidentresponsefundamentals
+- https://www.sans.org/white-papers/incident-handlers-handbook/
+- https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-61r2.pdf
