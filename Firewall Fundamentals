@@ -1,0 +1,131 @@
+# Firewall Fundamentals
+
+**Path:** Cyber Security 101 — Security Solutions
+**Room:** [Firewall Fundamentals](https://tryhackme.com/room/firewallfundamentals)
+**Difficulty:** Info / Easy
+**Est. Time:** 60 min
+**Focus:** Network security — firewall types, rules, Windows Defender Firewall, Linux iptables/ufw
+**Date completed:** 2026-06-17
+
+---
+
+## Summary
+
+A firewall inspects all incoming and outgoing traffic of a device or network and **allows or denies** it based on rules — like a security guard at a building entrance. This room covers the main firewall types and their OSI layers, the components of a firewall rule, and hands-on work with both the **Windows Defender Firewall** and **Linux (Netfilter / ufw)**.
+
+---
+
+## Task 1 — What Is the Purpose of a Firewall
+
+**Q: Which security solution inspects incoming and outgoing traffic of a device or network?**
+**A:** `Firewall`
+
+A firewall sits between your device/network and the internet. All traffic hits it first, and it allows or denies that traffic based on its rules. It's a **network-centric** control — the source of the firewall logs a SOC analyst reviews.
+
+---
+
+## Task 2 — Types of Firewalls
+
+| Firewall | OSI Layer | Key trait |
+|----------|-----------|-----------|
+| **Stateless** | L3–L4 | Rules only; no memory of previous connections (fast but forgetful) |
+| **Stateful** | L3–L4 | Tracks connection state in a **state table** |
+| **Proxy** (application-level gateway) | L7 | Inspects packet *content*; masks internal IPs; content filtering |
+| **NGFW** (Next-Generation) | L3–L7 | Deep packet inspection + IPS + heuristic analysis + SSL/TLS decryption + threat-intel |
+
+**Q1: Maintains the state of connections?** → `Stateful firewall`
+**Q2: Offers heuristic analysis?** → `Next-Generation firewall`
+**Q3: Inspects traffic coming to an application?** → `Proxy firewall`
+
+> **Memory hook:** stateless = no memory, stateful = remembers, proxy = reads content, NGFW = does everything.
+
+---
+
+## Task 3 — Rules in Firewalls
+
+**The 6 components of a firewall rule:**
+**Source · Destination · Port · Protocol · Action · Direction**
+
+**3 Actions:**
+- **Allow** — permit the traffic
+- **Deny** — block the traffic
+- **Forward** — redirect to another network segment (firewalls acting as gateways)
+
+**3 Directions:** Inbound (incoming) · Outbound (outgoing) · Forward (redirected)
+
+**Example rule (block incoming SSH to our server):**
+| Action | Source | Destination | Protocol | Port | Direction |
+|--------|--------|-------------|----------|------|-----------|
+| Deny | Any | 192.168.1.0/24 | TCP | 22 | Inbound |
+
+**Q1: Action to permit any traffic?** → `Allow`
+**Q2: Direction for traffic leaving our network?** → `Outbound`
+
+> Read a rule like a sentence: *Deny (action) from Any (source) to 192.168.1.0/24 (dest) on TCP/22 (proto/port) Inbound (direction)* = block all incoming SSH.
+
+---
+
+## Task 4 — Windows Defender Firewall (hands-on)
+
+**Access:** RDP'd into the Windows lab machine from the AttackBox:
+```bash
+xfreerdp /v:<TARGET_IP> /u:Administrator /p:'windows-defender@123' /cert:ignore +clipboard /dynamic-resolution
+```
+
+**Key concepts:**
+- **Network profiles** — Windows applies firewall settings based on **Network Location Awareness (NLA)**: *Private* (home/trusted) vs *Guest or public* (untrusted, e.g. coffee shops).
+- **Custom rules** built via **Advanced Settings** → Inbound/Outbound Rules → New Rule (wizard: rule type → program → protocol/port → scope → action → profile → name).
+- Example from the room: an **outbound rule** blocking TCP ports **80,443** stops all web browsing (proves the rule works).
+
+### Exercise — reading the security team's rules
+
+The created rules were found in **Advanced Settings → Inbound Rules**; the allowed IP was read from the allow rule's **Scope** tab.
+
+| # | Question | Answer |
+|---|----------|--------|
+| 1 | Rule name blocking all incoming SSH | `Core Op` |
+| 2 | Rule name allowing SSH from one IP | `Infra team` |
+| 3 | IP allowed under that rule | `192.168.13.7` |
+
+> **What it means:** the security team locked down SSH (port 22) entirely *except* one trusted admin IP. This is least-privilege in practice — deny by default, allow only the specific source that needs access.
+
+---
+
+## Task 5 — Linux iptables Firewall
+
+**Netfilter** is the core firewall framework *inside* the Linux kernel (packet filtering, NAT, connection tracking). Every Linux firewall utility is just a front-end driving Netfilter:
+
+| Utility | Notes |
+|---------|-------|
+| **iptables** | Classic, most widely used |
+| **nftables** | Modern **successor** to iptables |
+| **firewalld** | Uses pre-built network **zones** |
+| **ufw** | "Uncomplicated Firewall" — beginner-friendly front-end |
+
+**Q1: Successor of iptables?** → `nftables`
+**Q2: ufw rule to deny all outgoing traffic as default policy?** → `ufw default deny outgoing`
+
+**Useful ufw commands:**
+```bash
+ufw status                 # check status
+ufw enable / ufw disable   # turn on/off
+ufw deny 22/tcp            # block incoming SSH
+ufw default allow outgoing # set default outbound policy
+ufw status numbered        # list rules with numbers
+ufw delete <n>             # remove rule number n
+```
+
+---
+
+## Key Takeaways (SOC / Blue Team)
+
+- Firewall = allow/deny traffic by rule; the foundation of network defence and a key **log source**.
+- Firewall types map to OSI layers — **stateless/stateful (L3-4)**, **proxy (L7)**, **NGFW (L3-7)**.
+- Every rule = **Source · Destination · Port · Protocol · Action · Direction**.
+- Real-world pattern (Task 4): **deny SSH by default, allow only one trusted IP** = least privilege.
+- Linux: it all runs on **Netfilter**; `ufw` is the easy front-end, `nftables` is the modern engine.
+- For detection: firewall logs show blocked/allowed connections — the trail for spotting scanning, brute-force, and exfil attempts.
+
+---
+
+*Writeup by Murtaza (Taz) Shirzad — TryHackMe: AzlanMrt*
