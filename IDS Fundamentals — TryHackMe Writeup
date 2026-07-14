@@ -1,0 +1,169 @@
+# IDS Fundamentals — TryHackMe Writeup
+
+**Path:** Cyber Security 101 → Security Solutions
+**Room difficulty:** Beginner
+**Room link:** https://tryhackme.com/room/idsfundamentals
+**Tools used:** Snort 3
+
+---
+
+## Room Overview
+
+This room covers Intrusion Detection Systems (IDS) — what they are, how they differ from firewalls, the main deployment and detection categories, and a hands-on introduction to Snort as a real-world signature-based IDS implementation.
+
+A firewall is a gatekeeper: it inspects traffic at the boundary and blocks connections that violate policy. An IDS picks up where the firewall leaves off — it monitors traffic that has *already* entered the network and flags anything abnormal, acting like a set of surveillance cameras inside the building rather than a guard at the door. Critically, an IDS is passive: it detects and alerts, but it does not block or act on what it finds (that's the job of an IDS's active cousin, an IPS).
+
+---
+
+## Task 1 — What Is an IDS
+
+**Key concept:** An IDS complements a firewall by monitoring traffic *inside* the network boundary and generating alerts when it spots malicious or abnormal activity, but it takes no direct action to stop the threat itself.
+
+**Q: Can an IDS prevent the threat after it detects it?**
+**A:** No
+
+---
+
+## Task 2 — Types of IDS
+
+IDS solutions are categorized along two axes: **where they're deployed** and **how they detect threats**.
+
+### Deployment modes
+
+| Type | Scope | Trade-off |
+|---|---|---|
+| **HIDS** (Host Intrusion Detection System) | Installed on a single host; monitors only that host's activity | Deep visibility per host, but resource-intensive to manage at scale |
+| **NIDS** (Network Intrusion Detection System) | Monitors traffic across the whole network | Centralized visibility, not tied to any one host |
+
+### Detection modes
+
+| Type | Method | Strength | Weakness |
+|---|---|---|---|
+| **Signature-based** | Matches traffic against a database of known attack patterns | Fast, reliable for known threats | Blind to zero-days (no existing signature) |
+| **Anomaly-based** | Builds a baseline of "normal" behavior, flags deviations | Can catch zero-day/novel attacks | Prone to false positives; needs tuning |
+| **Hybrid** | Combines both — signature match first, anomaly detection as a fallback | Best of both worlds | More complex to run/maintain |
+
+**Q: Which type of IDS is deployed to detect threats throughout the network?**
+**A:** Network Intrusion Detection System (NIDS)
+
+**Q: Which IDS leverages both signature-based and anomaly-based detection techniques?**
+**A:** Hybrid IDS
+
+---
+
+## Task 3 — IDS Example: Snort
+
+Snort (open-source, first released 1998) is the reference signature-based IDS used throughout this room. Detection logic lives in **rule files** — Snort ships with built-in rule sets covering a broad range of known attack patterns, and you can extend or override them with custom rules.
+
+### Snort's three operating modes
+
+| Mode | What it does | Typical use case |
+|---|---|---|
+| **Packet Sniffer mode** | Reads/displays traffic live with no analysis | Quick troubleshooting of network issues |
+| **Packet Logger mode** | Logs all traffic (and any detections) to a PCAP file | Forensic investigation / after-the-fact root cause analysis |
+| **NIDS mode** | Applies rule files against live traffic in real time, raises alerts on a match | Snort's core IDS function — proactive monitoring |
+
+**Q: Which mode of Snort helps us log network traffic in a PCAP file?**
+**A:** Packet Logging Mode
+
+**Q: What is the primary mode of Snort called?**
+**A:** Network Intrusion Detection System Mode
+
+---
+
+## Task 4 — Snort Usage
+
+Snort's config and rule files live in `/etc/snort` on this room's VM (note: this path is set at install time — a from-source build commonly defaults to `/usr/local/etc/snort` instead). The key file is `snort.lua`, which controls which rule files are active and defines variables such as `$HOME_NET`.
+
+### Rule anatomy
+
+```
+alert icmp any any -> $HOME_NET any (msg:"Ping Detected"; sid:10001; rev:1;)
+```
+
+| Field | Meaning |
+|---|---|
+| `alert` | Action taken on match |
+| `icmp` | Protocol matched |
+| `any any` | Source IP / source port (any) |
+| `->` | Direction of traffic |
+| `$HOME_NET any` | Destination IP (network var) / destination port (any) |
+| `msg` | Alert message shown on trigger |
+| `sid` | Unique Signature ID for the rule |
+| `rev` | Rule revision number, bumped on every edit |
+
+### Custom rule created in this task
+
+Added to `/etc/snort/rules/local.rules`:
+
+```
+alert icmp any any -> 127.0.0.1 any (msg:"Loopback Ping Detected"; sid:10003; rev:1;)
+```
+
+### Running Snort live (NIDS mode)
+
+```bash
+sudo snort -q -l /var/log/snort -i lo -A alert_fast -c /etc/snort/snort.lua
+```
+
+Then in a second terminal:
+
+```bash
+ping 127.0.0.1
+```
+
+Result — each ICMP echo triggered the custom rule and Snort logged a `Loopback Ping Detected` alert.
+
+### Running Snort against a saved PCAP (offline / forensic mode)
+
+```bash
+sudo snort -q -l /var/log/snort -r Task.pcap -A alert_fast -c /etc/snort/snort.lua
+```
+
+**Q: Where is the main directory of Snort that stores its files?**
+**A:** `/etc/snort`
+
+**Q: Which field in the Snort rule indicates the revision number of the rule?**
+**A:** `rev`
+
+**Q: Which protocol is defined in the sample rule created in the task?**
+**A:** `icmp`
+
+**Q: What is the file name that contains custom rules for Snort?**
+**A:** `local.rules`
+
+---
+
+## Task 5 — Practical Lab (Exercise)
+
+**Scenario:** Acting as a third-party forensic investigator, analyze a handed-over capture (`Intro_to_IDS.pcap`, located in `/etc/snort/`) for signs of an SSH-based intrusion.
+
+Command used (from inside `/etc/snort`):
+
+```bash
+sudo snort -q -l /var/log/snort -r Intro_to_IDS.pcap -A alert_fast -c /etc/snort/snort.lua
+```
+
+> Answers below are placeholders — fill these in from your own Snort output once you've re-run the lab, since they depend on the live PCAP results rather than static room text.
+
+**Q: What is the IP address of the machine that tried to connect via SSH?**
+**A:** `<fill in from Snort alert output>`
+
+**Q: What other rule message besides the SSH message is detected in the PCAP file?**
+**A:** `<fill in from Snort alert output>`
+
+**Q: What is the sid of the rule that detects SSH?**
+**A:** `<fill in from Snort alert output>`
+
+---
+
+## Takeaways
+
+- IDS ≠ IPS: detection and alerting only, no blocking.
+- Signature-based detection is fast and low-noise but can't see zero-days; anomaly-based can catch novel attacks but needs tuning to keep false positives manageable — hybrid tries to get both.
+- Snort's three modes map cleanly onto three real jobs: sniff (troubleshoot), log (forensics), NIDS (live detection).
+- Rule structure (`action / protocol / src / direction / dst / metadata`) is worth memorizing cold — it's the same shape you'll see in every Snort rule from here on, including in the Jr Penetration Tester path.
+
+---
+
+*Part of my [TryHackMe writeups repo](https://github.com/murtrazashirzad-crypto/-tryhackme-writeups-) — Cyber Security 101 path.*
