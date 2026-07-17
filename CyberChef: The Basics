@@ -1,0 +1,190 @@
+# CyberChef: The Basics
+
+**Path:** Cyber Security 101 → Defensive Security Tooling
+**Room URL:** https://tryhackme.com/room/cyberchefbasics
+**Difficulty:** Easy
+**Time to complete:** ~60 min
+**Status:** ✅ Completed
+
+## Room Overview
+
+CyberChef is a browser-based "Swiss Army knife" for data manipulation, built by GCHQ. It's used constantly in SOC/DFIR work for decoding, extracting, and transforming data without writing custom scripts. CyberChef works on **recipes** — an ordered chain of operations applied to input data. This room covers the interface, the general workflow for approaching an unknown blob of data, and hands-on practice with common operations.
+
+---
+
+## Task 1 — Introduction
+
+CyberChef handles everything from simple encodings (XOR, Base64) to complex crypto operations (AES, RSA), all executed via recipes.
+
+**Learning Objectives:**
+- Learn what CyberChef is
+- Learn how to navigate the interface
+- Understand common operations
+- Learn how to create recipes and process data
+
+**Recommended prerequisite rooms:** Hashing Basics, Cryptography Basics
+
+*(No graded question — informational task only.)*
+
+---
+
+## Task 2 — Accessing the Tool
+
+Two ways to run CyberChef:
+
+| Method | Details |
+|---|---|
+| **Online** | https://gchq.github.io/CyberChef — just needs a browser + internet |
+| **Offline/Local** | Download the latest stable release from https://github.com/gchq/CyberChef/releases — works on Windows and Linux |
+
+*(No graded question — acknowledgment task only.)*
+
+---
+
+## Task 3 — Navigating the Interface
+
+CyberChef's UI is split into **four areas**:
+
+### 1. Operations
+The searchable library of all available operations, categorized by type. Notable examples:
+
+| Operation | Description | Example |
+|---|---|---|
+| From Morse Code | Morse → uppercase alphanumeric | `- .... .-. . .- - ...` → `THREATS` |
+| URL Encode | Percent-encodes problematic URI chars | `https://tryhackme.com/r/room/cyberchefbasics` → `https%3A%2F%2F...` |
+| To Base64 | Encodes raw data to ASCII Base64 | `This is fun!` → `VGhpcyBpcyBmdW4h` |
+| To Hex | Converts string to hex bytes | `This Hex conversion is awesome!` → `54 68 69 73 20 48 ...` |
+| To Decimal | Converts to ordinal integer array | `This Decimal conversion...` → `84 104 105 115 ...` |
+| ROT13 | Caesar cipher, rotates by 13 (default) | `Digital Forensics and Incident Response` → `Qvtvgny Sberafvpf naq Vapvqrag Erfcbafr` |
+
+Hovering over any operation shows a description + Wikipedia link.
+
+### 2. Recipe
+The "heart of the tool" — where operations are dragged, ordered, and configured with arguments.
+- **Save recipe** — store the current chain of operations
+- **Load recipe** — reload a saved one
+- **Clear recipe** — wipe the current chain
+- **BAKE!** button — executes the recipe against the input
+- **Auto Bake** — toggles automatic execution without manually clicking BAKE!
+
+### 3. Input
+Where data goes in — paste, type, or drag/drop.
+- Add new input tab
+- Open folder as input
+- Open file as input
+- Clear input/output
+- Reset pane layout
+
+### 4. Output
+Where results are shown.
+- Save output to `.dat` file
+- Copy raw output to clipboard
+- Replace input with output (chaining transformations)
+- Maximise output pane
+
+**Q&A:**
+
+| Question | Answer |
+|---|---|
+| In which area can you find "From Base64"? | **Operations** |
+| Which area is considered the heart of the tool? | **Recipe** |
+
+---
+
+## Task 4 — Before Anything Else
+
+A four-step mental model for approaching CyberChef work:
+
+1. **Set a clear objective** — "What do I want to accomplish?" (e.g., *"I found a gibberish string during an investigation — I want to know what it hides."*)
+2. **Put data into the Input area** — paste or upload the raw/gibberish data.
+3. **Select the right Operations** — this can be the hardest step if the encoding type is unknown. Research/context clues narrow it down (e.g., suspecting Encryption/Encoding category operations like `ROT13`, `Base64`, `Base85`, `ROT47`).
+4. **Check the Output** — "Have I achieved my objective?" If not, iterate back through steps 2–3.
+
+**Q&A:**
+
+| Question | Answer |
+|---|---|
+| At which step would you determine "What do I want to accomplish?" | **Step 1 — Set/define the objective** |
+
+---
+
+## Task 5 — Practice, Practice, Practice
+
+Hands-on practice using the Extractors, Date/Time, and Data Format categories.
+
+### Extractors
+| Operation | Purpose |
+|---|---|
+| Extract IP addresses | Pulls all valid IPv4/IPv6 addresses |
+| Extract URLs | Pulls URLs (requires protocol prefix to avoid false positives) |
+| Extract email addresses | Pulls anything matching `user@domain.tld` |
+
+### Date / Time
+| Operation | Purpose |
+|---|---|
+| To UNIX Timestamp | Converts UTC datetime string → UNIX timestamp |
+| From UNIX Timestamp | Converts UNIX timestamp → readable datetime |
+
+A UNIX timestamp = seconds elapsed since **Jan 1, 1970 UTC** (epoch).
+
+### Data Format (Base Encodings)
+| Operation | Description | Example |
+|---|---|---|
+| From Base64 | Decodes Base64 → raw text | `V2VsY29tZSB0byB0cnloYWNrbWUh` → `Welcome to tryhackme!` |
+| URL Decode | Percent-decodes back to raw | `https%3A%2F%2F...` → `https://...` |
+| From Base85 | More space-efficient than Base64 | `BOu!rD]j7BEbo7` → `hello world` |
+| From Base58 | Drops ambiguous chars (`l`,`I`,`0`,`O`) | `AXLU7qR` → `Thm58` |
+| To Base62 | Restricted symbol set, shorter output | `Thm62` → `6NiRkOY` |
+
+**Manual Base64 encoding walkthrough ("THM"):**
+1. Convert to 8-bit binary: `T`=`01010100`, `H`=`01001000`, `M`=`01001101`
+2. Concatenate → `010101000100100001001101` (24 bits)
+3. Split into 6-bit groups → `010101 000100 100001 001101`
+4. Convert each group to decimal → `21, 4, 33, 13`
+5. Map to Base64 index table → `V, E, h, N`
+6. Result: **`VEhN`**
+
+**Q&A:**
+
+| Question | Answer |
+|---|---|
+| Hidden email address | `hidden@hotmail.com` |
+| Hidden IP ending in `.232` | `102.20.11.232` |
+| Domain starting with "T" | `TryHackMe.com` |
+| Binary value of decimal 78 | `01001110` |
+| URL-encoded value of `https://tryhackme.com/r/careers` | `https%3A%2F%2Ftryhackme%2Ecom%2Fr%2Fcareers` |
+
+---
+
+## Task 6 — Your First Official Cook
+
+Applying everything learned to the Task 5 file, plus new standalone conversions.
+
+**Q&A:**
+
+| Question | Answer | Notes |
+|---|---|---|
+| IP starting and ending with "10" | *Pending verification* | Not solvable from room text alone — needs the actual Task 5 file re-checked in CyberChef |
+| Base64 of `Nice Room!` | `TmljZSBSb29tIQ==` | Standard Base64 encode |
+| URL decode of `https%3A%2F%2Ftryhackme%2Ecom%2Fr%2Froom%2Fcyberchefbasics` | `https://tryhackme.com/r/room/cyberchefbasics` | Percent-decode |
+| Datetime for Unix timestamp `1725151258` | `2024-09-01 00:40:58 UTC` | Standard epoch conversion |
+| Base85 decode of `<+oue+DGm>Ap%u7` | `This is fun!` | Standard Ascii85/Base85 decode |
+
+---
+
+## Task 7 — Conclusion
+
+Wrap-up task — room feedback/recommendation rating only, no technical question.
+
+---
+
+## Key Takeaways
+
+- CyberChef's Extractors save significant time during log/email triage — no need to hand-roll regex for common patterns.
+- Recognizing *which area/category* an operation belongs to (Operations vs. Recipe vs. Data Format vs. Date/Time) speeds up navigation as the operation list grows.
+- Base64/58/85/62 are **encodings, not encryption** — always reversible, never a confidentiality control. Common interview/exam trip-up.
+- The 4-step objective → input → operations → output loop is a useful mental checklist any time an unfamiliar encoded string shows up during an investigation.
+- Manually working through Base64's bit-splitting builds intuition that pays off later reading raw packet captures or malware strings in Ghidra/IDA.
+
+## Relevance to SOC / DFIR Work
+CyberChef is a daily-driver tool in Tier 1/2 SOC work for quickly decoding obfuscated payloads found in phishing emails, malicious scripts, or proxy logs — often faster than spinning up a Python shell for a one-off decode.
